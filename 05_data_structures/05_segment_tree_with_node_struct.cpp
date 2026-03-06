@@ -1,103 +1,111 @@
- /// segment tree with nodes
- struct Node {
-    int open, close, matched;
+/**
+ *
+ *   author: Ayon Das Gupta
+ *
+**/
+
+#include <bits/stdc++.h>
+#define endl '\n'
+#define ki(x) cout << x << endl
+#define debug(v) for (auto &i : v) { cout << i << ' '; } cout<<endl;
+#define debug2(v) for (auto &[x, y] : v) { cout << x << ' ' << y << endl; } cout << endl;
+using namespace std;
+using ll = unsigned long long;
+using ld = long double;
+const int mod = 1e9 + 7;
+const ll inf = (ll)1e18;
+#define int long long int
+
+const int N = 3e5 + 9;
+
+struct node {
+    int mn, cnt;
 };
 
-void build(int index, int low, int high, const string &s, vector<Node> &seg) {
-    if (low == high) {
-        // Initialize '(' and ')' counts
-        if (s[low] == '(') seg[index] = {1, 0, 0};
-        else seg[index] = {0, 1, 0};
-        return;
+int a[N];
+struct ST {
+  node t[4 * N];
+
+  static const int inf = 1e18;
+  ST() {
+     for(int i=0; i <= 4 * N; i++) {
+          t[i] = {inf, 0};
+     }
+  }
+
+  node merge(node l, node r) {
+      node ans = {inf, 0};
+
+      ans.mn = min(l.mn, r.mn);
+
+      if(ans.mn == l.mn) ans.cnt += l.cnt;
+      if(ans.mn == r.mn) ans.cnt += r.cnt;
+
+      return ans;
+  }
+
+  void build(int n, int b, int e) {
+    if (b == e) {
+      t[n] = {a[b], 1};
+      return;
     }
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    build(l, b, mid);
+    build(r, mid + 1, e);
+    t[n] = merge(t[l], t[r]); // change this
+  }
+  void upd(int n, int b, int e, int i, int x) {
+    if (b > i || e < i) return;
+    if (b == e && b == i) {
+      t[n] = {x, 1}; // update
+      return;
+    }
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    upd(l, b, mid, i, x);
+    upd(r, mid + 1, e, i, x);
+    t[n] = merge(t[l], t[r]); // change this
+  }
+  node query(int n, int b, int e, int i, int j) {
+    if (b > j || e < i) return {inf, 0}; // return appropriate value
+    if (b >= i && e <= j) return t[n];
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    return merge(query(l, b, mid, i, j), query(r, mid + 1, e, i, j)); // change this
+  }
+}t;
 
-    int mid = (low + high) >> 1;
-    build(2 * index + 1, low, mid, s, seg);
-    build(2 * index + 2, mid + 1, high, s, seg);
+void solve() {
+    int n, q;
+    cin>>n>>q;
 
-    // Merge children nodes
-    int matched = min(seg[2 * index + 1].open, seg[2 * index + 2].close);
-    seg[index].matched = seg[2 * index + 1].matched + seg[2 * index + 2].matched + matched;
-    seg[index].open = seg[2 * index + 1].open + seg[2 * index + 2].open - matched;
-    seg[index].close = seg[2 * index + 1].close + seg[2 * index + 2].close - matched;
+    for(int i=0; i<n; i++) cin>>a[i];
+
+    t.build(1, 0, n - 1);
+
+    while(q--) {
+        int type;
+        cin>>type;
+
+        if(type == 1) {
+            int i, v; cin>>i>>v;
+            t.upd(1, 0, n - 1, i, v);
+        }
+        else {
+            int l, r;
+            cin>>l>>r;
+
+            node ans = t.query(1, 0, n - 1, l, r - 1);
+            cout<<ans.mn<<' '<<ans.cnt<<endl;
+        }
+    }
 }
 
-Node range_query(int index, int low, int high, int l, int r, const vector<Node> &seg) {
-    // No overlap
-    if (high < l || low > r) return {0, 0, 0};
-
-    // Complete overlap
-    if (low >= l && high <= r) return seg[index];
-
-    // Partial overlap
-    int mid = (low + high) >> 1;
-    auto left = range_query(2 * index + 1, low, mid, l, r, seg);
-    auto right = range_query(2 * index + 2, mid + 1, high, l, r, seg);
-
-    // Merge results
-    int matched = min(left.open, right.close);
-    return {
-        left.open + right.open - matched,
-        left.close + right.close - matched,
-        left.matched + right.matched + matched
-    };
-}
-
-/// segment tree solved by cnt(frequency) array
-  /// build segment tree sum
-        int n;
-        cin >> n;
-
-        vector<int> v(n);
-        int max_val = 0;
-
-        for(int i = 0; i < n; i++) {
-            cin >> v[i];
-            max_val = max(max_val, v[i]);
-        }
-
-        cnt.assign(max_val + 1, 0);
-        seg.assign(4 * (max_val + 1), 0);
-
-        for(int i = 0; i < n; i++) {
-            cnt[v[i]]++;
-        }
-
-        build(0, 0, max_val, cnt, seg);
-
-        ll ans = 0;
-        for(int i = 0; i < n; i++) {
-
-            update(0, 0, max_val, v[i], -1, seg);
-            if(v[i] > 1)
-                ans += range_query(0, 0, max_val, 1, v[i] - 1, seg);
-        }
-
-        cout << ans << '\n';
-
-int main() {
+int32_t main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
 
-    string s;
-    cin >> s;
-    int n = s.size();
-
-    // Segment tree with Node {open, close, matched}
-    vector<Node> seg(4 * n);
-    build(0, 0, n - 1, s, seg);
-
-    int q;
-    cin >> q;
-
-    while (q--) {
-        int l, r;
-        cin >> l >> r;
-        --l; --r;
-
-        // Query the range and calculate the result
-        auto res = range_query(0, 0, n - 1, l, r, seg);
-        cout << (res.matched << 1) << '\n'; // Matched pairs contribute 2 each
+    int t = 1;
+    while (t--) {
+        solve();
     }
 
     return 0;
