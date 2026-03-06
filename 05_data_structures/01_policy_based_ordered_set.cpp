@@ -22,34 +22,31 @@ using ordered_set = tree<T, null_type, greater_equal<T>, rb_tree_tag, tree_order
     ordered_set<int> X;
     ordered_set<pair<int, int>> X;
 
-///    X.insert(1);
-///    X.insert(2);
-///    X.insert(2);
-///    X.insert(4);
-///    X.insert(8);
-///    X.insert(16);
-///    1 2 4 8 16
-///    cout<<*X.find_by_order(1)<<endl; // 2
-///    cout<<*X.find_by_order(2)<<endl; // 2
-///    cout<<*X.find_by_order(4)<<endl; // 8
-///    cout<<(end(X)==X.find_by_order(6))<<endl; // true
-//
-///    cout<<X.order_of_key(-5)<<endl;  // 0
-///    cout<<X.order_of_key(1)<<endl;   // 0
-///    cout<<X.order_of_key(3)<<endl;   // 3
-///    cout<<X.order_of_key(4)<<endl;   // 3
-///    cout<<X.order_of_key(5)<<endl;   // 4
-///    cout<<X.order_of_key(400)<<endl; // 6
 
-/*******
-complexity all in logn
-s.find_by_order(i)->first for pair
-*s.find_by_order(i) ith index from 0
-s.order_of_key(k) values stricly less than k
-s.erase(s.find_by_order(s.order_of_key(val))) only for the duplicate values and if the val containes in the set
-s.size() - s.order_of_key(k) values greater equal than k
- ****************/
+/////////////////////////////////////////////////
+#include<bits/stdc++.h>
+#include<ext/pb_ds/assoc_container.hpp>
+#include<ext/pb_ds/tree_policy.hpp>
+using namespace __gnu_pbds;
+using namespace std;
 
+template <typename T> using o_set = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
+
+int32_t main() {
+  ios_base::sync_with_stdio(0);
+  cin.tie(0);
+  o_set<int> se;
+  se.insert(4);
+  se.insert(2);
+  se.insert(5);
+  // sorted set se = [2, 4, 5]
+  cout << se.order_of_key(5) << '\n'; // number of elements < 5
+  cout << se.order_of_key(6) << '\n'; // number of elements < 6
+  cout << (*se.find_by_order(1)) << '\n'; // if you imagine this as a 0-indexed vector, what is se[1]?
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////
 /// implement pair ordered set
     ordered_pairset s;
     int n, q;
