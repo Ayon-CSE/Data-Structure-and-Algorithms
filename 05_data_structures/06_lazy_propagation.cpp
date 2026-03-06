@@ -1,102 +1,69 @@
-/// update with lazy propagation
-void update(int index, int low, int high, int l, int r, ll value, vector<ll> &lazy, vector<ll> &seg) {
-    /// update the previous remaining update
-    /// and propagate downwards
-    /// propagate(index, low, high, lazy, seg);
-    if(lazy[index] != 0) {
-        seg[index] += (high - low + 1) * lazy[index];
-        /// when say flipped range binary bit
-///        seg[index] = (high - low + 1) - seg[index];
-        /// when say min or max
-///        seg[index] += lazy[index];
-
-
-        /// propogate the lazy update downwards
-        /// for the remaining nodes to get updated
-        if(low != high) {/// this is not leaf node
-            lazy[2 * index + 1] += lazy[index];
-            lazy[2 * index + 2] += lazy[index];
-        }
-        /// when say flipped range binary bit
-///        if(low != high) {
-///             lazy[2 * index + 1] = !lazy[2 * index + 1];
-///             lazy[2 * index + 2] = !lazy[2 * index + 2];
-///        }
-
-        lazy[index] = 0;
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 5e5 + 9;
+int a[N];
+struct ST {
+  #define lc (n << 1)
+  #define rc ((n << 1) + 1)
+  long long t[4 * N], lazy[4 * N];
+  ST() {
+    memset(t, 0, sizeof t);
+    memset(lazy, 0, sizeof lazy);
+  }
+  inline void push(int n, int b, int e) { // change this
+    if (lazy[n] == 0) return;
+    t[n] = t[n] + lazy[n] * (e - b + 1);
+    if (b != e) {
+      lazy[lc] = lazy[lc] + lazy[n];
+      lazy[rc] = lazy[rc] + lazy[n];
     }
-
-    /// no overlap
-    /// we don't do anything and return
-    /// low high l r or l r low high
-    if(high < l or r < low) return;
-
-    /// complete overlap
-    /// l low high r
-    if(low >= l and high <= r) {
-        seg[index] += (high - low + 1) * value;
-            /// when say flipped range binary bit
-///        seg[index] = (high - low + 1) - value;
-           /// when say min or max
-///        seg[index] += value;
-
-        /// if not leaf node, this will have children
-        if(low != high) {
-            lazy[2 * index + 1] += value;
-            lazy[2 * index + 2] += value;
-        }
-       /// when say flipped range binary bit
-///        if(low != high) {
-///             lazy[2 * index + 1] = !lazy[2 * index + 1];
-///             lazy[2 * index + 2] = !lazy[2 * index + 2];
-///        }
-        return;
+    lazy[n] = 0;
+  }
+  inline long long combine(long long a,long long b) { // change this
+    return a + b;
+  }
+  inline void pull(int n) { // change this
+    t[n] = t[lc] + t[rc];
+  }
+  void build(int n, int b, int e) {
+    lazy[n] = 0; // change this
+    if (b == e) {
+      t[n] = a[b];
+      return;
     }
-
-    /// partial overlap
-    int mid = (low + high) >> 1;
-    update(2 * index + 1, low, mid, l, r, value, lazy, seg);
-    update(2 * index + 2, mid + 1, high, l, r, value, lazy, seg);
-
-    seg[index] = seg[2 * index + 1] + seg[2 * index + 2];
-}
-
-/// query with lazy propagation
-ll query(int index, int low, int high, int l, int r, vector<ll> &lazy, vector<ll> &seg) {
-    /// update the previous remaining update
-    /// and propagate downwards
-    /// propagate(index, low, high, lazy, seg);
-    if(lazy[index] != 0) {
-        seg[index] += (high - low + 1) * lazy[index];
-        /// when say flipped range binary bit
-///         seg[index] = (high - low + 1) - seg[index];
-        /// when say min or max
-///         seg[index] += lazy[index];
-
-        /// propogate the lazy update downwards
-        /// for the remaining nodes to get updated
-        if(low != high) {/// this is not leaf node
-            lazy[2 * index + 1] += lazy[index];
-            lazy[2 * index + 2] += lazy[index];
-        }
-        /// when say flipped range binary bit
-///        if(low != high) {
-///             lazy[2 * index + 1] = !lazy[2 * index + 1];
-///             lazy[2 * index + 2] = !lazy[2 * index + 2];
-///        }
-
-        lazy[index] = 0;
+    int mid = (b + e) >> 1;
+    build(lc, b, mid);
+    build(rc, mid + 1, e);
+    pull(n);
+  }
+  void upd(int n, int b, int e, int i, int j, long long v) {
+    push(n, b, e);
+    if (j < b || e < i) return;
+    if (i <= b && e <= j) {
+      lazy[n] = v; //set lazy
+      push(n, b, e);
+      return;
     }
-
-    /// no overlap
-    if(high < l or r < low) return 0;
-
-    /// complete overlap
-    if(low >= l and high <= r) return seg[index];
-
-    ///partial overlap
-    int mid = (low + high) >> 1;
-    ll left = query(2 * index + 1, low, mid, l, r, lazy, seg);
-    ll right = query(2 * index + 2, mid + 1, high, l, r, lazy, seg);
-    return left + right;
+    int mid = (b + e) >> 1;
+    upd(lc, b, mid, i, j, v);
+    upd(rc, mid + 1, e, i, j, v);
+    pull(n);
+  }
+  long long query(int n, int b, int e, int i, int j) {
+    push(n, b, e);
+    if (i > e || b > j) return 0; //return null
+    if (i <= b && e <= j) return t[n];
+    int mid = (b + e) >> 1;
+    return combine(query(lc, b, mid, i, j), query(rc, mid + 1, e, i, j));
+  }
+}t;
+int32_t main() {
+  int n = 5;
+  for (int i = 1; i <= n; i++) {
+    a[i] = i;
+  }
+  t.build(1, 1, n); // building the segment tree
+  t.upd(1, 1, n, 2, 3, 10); // adding 10 to the segment [2, 3]
+  cout << t.query(1, 1, n, 1, 5) << '\n'; // range sum query on the segment [1, 5]
+  return 0;
 }
