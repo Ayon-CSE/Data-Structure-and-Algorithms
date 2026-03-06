@@ -1,103 +1,54 @@
-/// segment tree
-void build(int index, int low, int high, vector<int> &v, vector<int> &seg) {
-    if(low == high) {
-        seg[index] = v[low];
-        return;
+#include<bits/stdc++.h>
+using namespace std;
+
+const int N = 3e5 + 9;
+
+int a[N];
+struct ST {
+  int t[4 * N];
+  static const int inf = 1e9;
+  ST() {
+    memset(t, 0, sizeof t);
+  }
+  void build(int n, int b, int e) {
+    if (b == e) {
+      t[n] = a[b];
+      return;
     }
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    build(l, b, mid);
+    build(r, mid + 1, e);
+    t[n] = max(t[l], t[r]); // change this
+  }
+  void upd(int n, int b, int e, int i, int x) {
+    if (b > i || e < i) return;
+    if (b == e && b == i) {
+      t[n] = x; // update
+      return;
+    }
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    upd(l, b, mid, i, x);
+    upd(r, mid + 1, e, i, x);
+    t[n] = max(t[l], t[r]); // change this
+  }
+  int query(int n, int b, int e, int i, int j) {
+    if (b > j || e < i) return -inf; // return appropriate value
+    if (b >= i && e <= j) return t[n];
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    return max(query(l, b, mid, i, j), query(r, mid + 1, e, i, j)); // change this
+  }
+}t;
 
-    int mid = (high + low) >> 1;
-    build(2 * index + 1, low, mid, v, seg);
-    build(2 * index + 2, mid + 1, high, v, seg);
+int32_t main() {
+  ios_base::sync_with_stdio(0);
+  cin.tie(0);
+  int n = 5;
+  for (int i = 1; i <= n; i++) {
+    a[i] = i;
+  }
+  t.build(1, 1, n); // building the segment tree
+  t.upd(1, 1, n, 2, 10); // assiging 10 to the index 2 (a[2] := 10)
+  cout << t.query(1, 1, n, 1, 5) << '\n'; // range max query on the segment [1, 5]
 
-    seg[index] = min(seg[2 * index + 1], seg[2 * index + 2]);
+  return 0;
 }
-
-int range_query(int index, int low, int high, int l, int r, vector<int> &seg) {
-    /// no overlap -> [low high] [l r] or [l r] [low high]
-    if(high < l or r < low) return INT_MAX;
-
-    /// complete overlap -> [l low high r]
-    if(low >= l and high <= r) return seg[index];
-
-    /// partial overlap -> [2 5] [4 6]
-    int mid = (low + high) >> 1;
-    int left = range_query(2 * index + 1, low, mid, l, r, seg);
-    int right = range_query(2 * index + 2, mid + 1, high, l, r, seg);
-    return min(left, right);
-}
-
-void update(int index, int low, int high, int i, int value, vector<int> &seg) {
-    if(low == high) {
-        seg[index] = value;
-        return;
-    }
-
-    int mid = (low + high) >> 1;
-    if(i <= mid) update(2 * index + 1, low, mid, i, value, seg);
-    else update(2 * index + 2, mid + 1, high, i, value, seg);
-
-    seg[index] = min(seg[2 * index + 1], seg[2 * index + 2]);
-}
-
-/// just when say query
-    int n;
-    cin>>n;
-
-    /// if(n == 0) return 0; // Handle edge case of empty array.
-
-    vector<int> v(n), seg(4 * n);
-    for(int i=0; i < n; i++) cin>>v[i];
-
-    build(0, 0, n - 1, v, seg);
-    int q;
-    cin>>q;
-    while(q--) {
-        int l, r;
-        cin>>l>>r;
-
-        /// If 1-based indexing is used:
-        l--, r--;
-
-        cout<<range_query(0, 0, n - 1, l, r, seg)<<endl;
-    }
-
-/// just when say query and update
-    int n;
-    cin>>n;
-
-    /// if(n == 0) return 0; // Handle edge case of empty array.
-
-    vector<int> v(n), seg(4 * n + 1);
-    for(int i=0; i < n; i++) cin>>v[i];
-
-    build(0, 0, n - 1, v, seg);
-    int q;
-    cin>>q;
-    while(q--) {
-        int type;
-        cin>>type;
-
-        if(type == 1) {
-            int l, r;
-            cin>>l>>r;
-
-            /// If 1-based indexing is used:
-             l--, r--;
-
-            cout<<range_query(0, 0, n - 1, l, r, seg)<<endl;
-        }
-        else {
-            int i, value;
-            cin>>i>>value;
-
-            /// If 1-based indexing is used:
-            i--;
-
-            update(0, 0, n - 1, i, value, seg);
-            v[i] = value;
-        }
-    }
-
-/// if two vector then construct two segment tree as simple
- build(0, 0, n - 1, v, seg);
- build(0, 0, n - 1, v2, seg2);
