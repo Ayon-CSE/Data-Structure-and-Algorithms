@@ -16,8 +16,44 @@ const int mod = 1e9 + 7;
 const ll inf = (ll)1e18;
 #define int long long int
 
-const int N = 1e6 + 9;
-vector<int> a(N), b(N), q(N), cnt(N, 0);
+const int N = 3e5 + 9;
+vector<int> v(N), b(N), q(N);
+
+int a[N];
+struct ST {
+  int t[4 * N];
+  static const int inf = 1e9;
+  ST() {
+    memset(t, 0, sizeof t);
+  }
+  void build(int n, int b, int e) {
+    if (b == e) {
+      t[n] = 0;
+      return;
+    }
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    build(l, b, mid);
+    build(r, mid + 1, e);
+    t[n] = 0; // change this
+  }
+  void upd(int n, int b, int e, int i, int x) {
+    if (b > i || e < i) return;
+    if (b == e && b == i) {
+          t[n] += x; // update
+          return;
+    }
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    upd(l, b, mid, i, x);
+    upd(r, mid + 1, e, i, x);
+    t[n] = t[l] + t[r]; // change this
+  }
+  int query(int n, int b, int e, int i, int j) {
+    if (b > j || e < i) return 0; // return appropriate value
+    if (b >= i && e <= j) return t[n];
+    int mid = (b + e) >> 1, l = n << 1, r = l | 1;
+    return query(l, b, mid, i, j) + query(r, mid + 1, e, i, j); // change this
+  }
+}t;
 
 void solve(int cs) {
     cout<<"Case "<<cs<<":\n";
@@ -26,8 +62,8 @@ void solve(int cs) {
 
     set<int> s;
     for(int i=0; i<n; i++) {
-        cin>>a[i]>>b[i];
-        s.insert(a[i]);
+        cin>>v[i]>>b[i];
+        s.insert(v[i]);
         s.insert(b[i]);
     }
 
@@ -43,47 +79,23 @@ void solve(int cs) {
         id++;
     }
 
-    /// coordinate compression
-    /// suppose range like (1-6), (4-10)
-    /// and to find 7 lies in how many segments
-    /// answer is 1
-    /// if i range to add +1 -->
-    /// 1 2 3 4 5 6 7 8 9 10
-    /// 1 1 1 2 2 2 1 1 1 1
-    /// ans holo 7 er cnt 1, but value beshi boro upto 1e10
-    /// karon eta 1e10 o porjonto hote pare but ei value vector e ana jabe na
-    /// etake coordinate compression k korbo mane compressed
-    /// so compressed kore n niye ashbo, total index
-    /// 1 2 3 4 5
-    /// 1 4 6 7 10
-    /// (1-6) range +1 add kora mane (1-3) index e +1 add kora
-    /// (4-10) range +1 add kora mane (2-5) index e +1 add kora
-    /// 1 2 3 4 5
-    /// 1 4 6 7 10
-    /// 1 2 2 1 1
-    /// taile 7 kotobar segment er vitor ache 1 bar, etai coordinate compression
-    /// then all prefix sum optimized which is difference array
-    /// cnt[l]++; cnt[r + 1]--;
-
     for(int i=0; i<n; i++) {
-        a[i] = mp[a[i]];
+        v[i] = mp[v[i]];
         b[i] = mp[b[i]];
-
-        /// difference array
-        cnt[a[i]]++;
-        cnt[b[i] + 1]--;
     }
     for(int i=0; i<m; i++) {
         q[i] = mp[q[i]];
     }
 
-    for(int i=1; i<=id; i++) cnt[i] += cnt[i - 1];
-
-    for(int i=0; i<m; i++) {
-        cout<<cnt[q[i]]<<endl;
+    t.build(1, 1, id);
+    for(int i=0; i<n; i++) {
+        t.upd(1, 1, id, v[i], 1);
+        t.upd(1, 1, id, b[i] + 1, -1);
     }
 
-    for(int i=1; i<=id; i++) cnt[i] = 0;
+    for(int i=0; i<m; i++) {
+        cout<<t.query(1, 1, id, 0, q[i])<<endl;
+    }
 }
 
 int32_t main() {
