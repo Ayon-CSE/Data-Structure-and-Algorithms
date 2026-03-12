@@ -10,11 +10,11 @@ using namespace std;
 
 #define int long long
 
-const int N = 1e5 + 9;
+const int N = 1e5 + 9, inf = 1e18;
 int a[N];
 
 struct node {
-    int ones, zeros;
+    int sum, mn;
 };
 
 struct ST {
@@ -28,26 +28,29 @@ struct ST {
     memset(lazy, 0, sizeof lazy);
   }
 
-  void push(int n, int b, int e) {
+  void push(int n, int b, int e) {///change this
     if (lazy[n] == 0) return;
 
-    swap(t[n].ones, t[n].zeros);
+    t[n].sum = t[n].sum + lazy[n] * (e - b + 1);
+    t[n].mn += lazy[n];
 
     if (b != e) {
-      lazy[lc] ^= 1;
-      lazy[rc] ^= 1;
+      lazy[lc] += lazy[n];
+      lazy[rc] += lazy[n];
     }
 
     lazy[n] = 0;
   }
 
-  node merge(node l, node r) {
-      if(l.ones == -1) return r;
-      if(r.ones == -1) return l;
+  node merge(node l, node r) {///change this
+      if(l.mn == inf) return r;
+      if(r.mn == inf) return l;
 
-      node ans;
-      ans.ones = l.ones + r.ones;
-      ans.zeros = l.zeros + r.zeros;
+      node ans = {0, inf};
+
+      ans.sum = l.sum + r.sum;
+      ans.mn = min(l.mn, r.mn);
+
       return ans;
   }
 
@@ -56,17 +59,11 @@ struct ST {
   }
 
   void build(int n, int b, int e) {
-    lazy[n] = 0;
+    lazy[n] = 0;///change this
 
-    if (b == e) {
-      if(a[b] == 1) {
-         t[n].ones = 1;
-         t[n].zeros = 0;
-      }
-      else {
-         t[n].ones = 0;
-         t[n].zeros = 1;
-      }
+    if (b == e) {///change this
+      t[n].sum = 0;
+      t[n].mn = a[b];
       return;
     }
 
@@ -76,20 +73,20 @@ struct ST {
     pull(n);
   }
 
-  void upd(int n, int b, int e, int i, int j) {
+  void upd(int n, int b, int e, int i, int j, int v) {
     push(n, b, e);
 
     if (j < b || e < i) return;
 
     if (i <= b && e <= j) {
-      lazy[n] = 1;
+      lazy[n] += v;///change this
       push(n, b, e);
       return;
     }
 
     int mid = (b + e) >> 1;
-    upd(lc, b, mid, i, j);
-    upd(rc, mid + 1, e, i, j);
+    upd(lc, b, mid, i, j, v);
+    upd(rc, mid + 1, e, i, j, v);
 
     pull(n);
   }
@@ -97,44 +94,36 @@ struct ST {
   node query(int n, int b, int e, int i, int j) {
     push(n, b, e);
 
-    if (i > e || b > j) return {-1, -1};
+    if (i > e || b > j) return {0, inf};///change this
 
     if (i <= b && e <= j) return t[n];
 
     int mid = (b + e) >> 1;
 
-    return merge(query(lc, b, mid, i, j),query(rc, mid + 1, e, i, j));
+    return merge(query(lc, b, mid, i, j), query(rc, mid + 1, e, i, j));
   }
 } t;
 
 void solve() {
-    string s;
-    cin >> s;
-    int n = s.size();
-
-    for(int i = 0; i < n; i++) {
-        a[i + 1] = s[i] - '0';
-    }
+    int n, q;
+    cin>>n>>q;
 
     t.build(1, 1, n);
 
-    int q;
-    cin >> q;
-
     while(q--) {
-        char c;
-        cin >> c;
+        int type; cin>>type;
 
-        if(c == 'I') {
-            int l, r;
-            cin >> l >> r;
-            t.upd(1, 1, n, l, r);
+        if(type == 1) {
+            int l, r, v; cin>>l>>r>>v;
+            l++; r++;
+            t.upd(1, 1, n, l, r - 1, v);
         }
         else {
-            int i;
-            cin >> i;
-            node ans = t.query(1, 1, n, i, i);
-            cout << ans.ones << endl;
+            int l, r; cin>>l>>r;
+            l++; r++;
+
+            node ans = t.query(1, 1, n, l, r - 1);
+            cout<<ans.mn<<endl;
         }
     }
 }
@@ -143,11 +132,10 @@ int32_t main() {
     ios::sync_with_stdio(false);
     cin.tie(NULL);
 
-    int T;
-    cin >> T;
+    int T = 1;
+    ///cin >> T;
 
     for(int tc = 1; tc <= T; tc++) {
-        cout << "Case " << tc << ":" << endl;
         solve();
     }
 
