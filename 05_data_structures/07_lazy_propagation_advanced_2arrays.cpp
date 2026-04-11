@@ -1,149 +1,150 @@
-/// lazy propagation -> ek node e 5 ta node er kaaj eksathe
-const ll mod = 998244353;
+/**
+ *
+ *   author: Ayon Das Gupta
+ *
+**/
 
-void modnor(ll &x) {x %= mod; if(x < 0)(x += mod);}
-ll modmul(ll x, ll y) { x %= mod, y %= mod; modnor(x),modnor(y); return (x*y)%mod; }
-ll modadd(ll x, ll y) { x %= mod, y %= mod; modnor(x),modnor(y); return (x+y)%mod; }
-ll modsub(ll x, ll y) { x %= mod, y %= mod; modnor(x),modnor(y); x -= y; modnor(x); return x; }
-ll modpow(ll b, ll p) { ll r = 1; while(p) {if(p&1) r = modmul(r, b); b = modmul(b, b);p >>= 1;}return r;}
-ll modinverse(ll x){return modpow(x,mod-2);}  /// if mod is prime.
-ll moddiv(ll x, ll y){return modmul(x,modinverse(y));}
+#include <bits/stdc++.h>
+#define endl '\n'
+#define ki(x) cout << x << endl
+#define debug(v) for (auto &i : v) { cout << i << ' '; } cout<<endl;
+#define debug2(v) for (auto &[x, y] : v) { cout << x << ' ' << y << endl; } cout << endl;
+using namespace std;
+using ll = unsigned long long;
+using ld = long double;
+const ll mod =  1e9 + 7;
+const ll inf = (ll)1e18;
+#define int long long int
 
-void build(int index, int low, int high, vector<ll> &a, vector<ll> &sega, vector<ll> &b, vector<ll> &segb, vector<ll> &seg) {
-    if(low == high) {
-        sega[index] = a[low];
-        segb[index] = b[low];
-        seg[index] = modmul(sega[index], segb[index]);
-        return;
+const int N = 1e5 + 9;
+
+struct node {
+    int cnt[3];
+};
+
+struct ST {
+#define lc (n << 1)
+#define rc ((n << 1) + 1)
+
+  node t[4 * N];
+  int lazy[4 * N];
+
+  ST() {
+    memset(lazy, 0, sizeof lazy);
+  }
+
+  void push(int n, int b, int e) {
+    if (lazy[n] == 0) return;
+
+    node cur = t[n];
+    for(int i=0; i<3; i++) {
+        t[n].cnt[(i + lazy[n]) % 3] = cur.cnt[i];
     }
 
-    int mid = (high + low) >> 1;
-    build(2 * index + 1, low, mid, a, sega, b, segb, seg);
-    build(2 * index + 2, mid + 1, high, a, sega, b, segb, seg);
-
-    sega[index] = modadd(sega[2 * index + 1], sega[2 * index + 2]);
-    segb[index] = modadd(segb[2 * index + 1], segb[2 * index + 2]);
-    seg[index] = modadd(seg[2 * index + 1], seg[2 * index + 2]);
-}
-
-void propagate(int index, int low, int high, vector<ll> &lazy, vector<ll> &lazy2, vector<ll> &sega, vector<ll> &segb, vector<ll> &seg) {
-    if(lazy[index] != 0) {
-        sega[index] = modadd(sega[index], modmul((high - low + 1), lazy[index]));
-        seg[index] = modadd(seg[index], modmul(lazy[index], segb[index]));
-
-        if(low != high) {
-            lazy[2 * index + 1] = modadd(lazy[2 * index + 1], lazy[index]);
-            lazy[2 * index + 2] = modadd(lazy[2 * index + 2], lazy[index]);
-        }
-
-        lazy[index] = 0;
+    if (b != e) {
+      lazy[lc] = (lazy[lc] + lazy[n]) % 3;
+      lazy[rc] = (lazy[rc] + lazy[n]) % 3;
     }
 
-    if(lazy2[index] != 0) {
-        segb[index] = modadd(segb[index], modmul((high - low + 1), lazy2[index]));
-        seg[index] = modadd(seg[index], modmul(lazy2[index], sega[index]));
+    lazy[n] = 0;
+  }
 
-        if(low != high) {
-            lazy2[2 * index + 1] = modadd(lazy2[2 * index + 1], lazy2[index]);
-            lazy2[2 * index + 2] = modadd(lazy2[2 * index + 2], lazy2[index]);
-        }
+  node merge(node l, node r) {
+      node ans;
+      for(int i=0; i<3; i++) {
+          ans.cnt[i] = l.cnt[i] + r.cnt[i];
+      }
+      return ans;
+  }
 
-        lazy2[index] = 0;
-    }
-}
+  void pull(int n) {
+      t[n] = merge(t[lc], t[rc]);
+  }
 
-void update(int index, int low, int high, int l, int r, ll value, vector<ll> &lazy, vector<ll> &lazy2, vector<ll> &sega, vector<ll> &segb, vector<ll> &seg) {
-    propagate(index, low, high, lazy, lazy2, sega, segb, seg);
+  void build(int n, int b, int e) {
+    lazy[n] = 0;
 
-    if(high < l or r < low) return;
-
-    if(low >= l and high <= r) {
-        sega[index] = modadd(sega[index], modmul((high - low + 1), value));
-        seg[index] = modadd(seg[index], modmul(value, segb[index]));
-
-        if(low != high) {
-            lazy[2 * index + 1] = modadd(lazy[2 * index + 1], value);
-            lazy[2 * index + 2] = modadd(lazy[2 * index + 2], value);
-        }
-
-        return;
+    if (b == e) {
+      t[n].cnt[0] = 1;
+      t[n].cnt[1] = 0;
+      t[n].cnt[2] = 0;
+      return;
     }
 
-    int mid = (low + high) >> 1;
-    update(2 * index + 1, low, mid, l, r, value, lazy, lazy2, sega, segb, seg);
-    update(2 * index + 2, mid + 1, high, l, r, value, lazy, lazy2, sega, segb, seg);
+    int mid = (b + e) >> 1;
+    build(lc, b, mid);
+    build(rc, mid + 1, e);
+    pull(n);
+  }
 
-    sega[index] = modadd(sega[2 * index + 1], sega[2 * index + 2]);
-    seg[index] = modadd(seg[2 * index + 1], seg[2 * index + 2]);
-}
+  void upd(int n, int b, int e, int i, int j, int v) {
+    push(n, b, e);
 
-void update2(int index, int low, int high, int l, int r, ll value, vector<ll> &lazy, vector<ll> &lazy2, vector<ll> &sega, vector<ll> &segb, vector<ll> &seg) {
-    propagate(index, low, high, lazy, lazy2, sega, segb, seg);
+    if (j < b || e < i) return;
 
-    if(high < l or r < low) return;
-
-    if(low >= l and high <= r) {
-        segb[index] = modadd(segb[index], modmul((high - low + 1), value));
-        seg[index] = modadd(seg[index], modmul(value, sega[index]));
-
-        if(low != high) {
-            lazy2[2 * index + 1] = modadd(lazy2[2 * index + 1], value);
-            lazy2[2 * index + 2] = modadd(lazy2[2 * index + 2], value);
-        }
-
-        return;
+    if (i <= b && e <= j) {
+      lazy[n] = (lazy[n] + v) % 3;
+      push(n, b, e);
+      return;
     }
 
-    int mid = (low + high) >> 1;
-    update2(2 * index + 1, low, mid, l, r, value, lazy, lazy2, sega, segb, seg);
-    update2(2 * index + 2, mid + 1, high, l, r, value, lazy, lazy2, sega, segb, seg);
+    int mid = (b + e) >> 1;
+    upd(lc, b, mid, i, j, v);
+    upd(rc, mid + 1, e, i, j, v);
 
-    segb[index] = modadd(segb[2 * index + 1], segb[2 * index + 2]);
-    seg[index] = modadd(seg[2 * index + 1], seg[2 * index + 2]);
-}
+    pull(n);
+  }
 
-ll query(int index, int low, int high, int l, int r, vector<ll> &lazy, vector<ll> &lazy2, vector<ll> &sega, vector<ll> &segb, vector<ll> &seg) {
-    propagate(index, low, high, lazy, lazy2, sega, segb, seg);
+  node query(int n, int b, int e, int i, int j) {
+    push(n, b, e);
 
-    if(high < l or r < low) return 0;
+    if (i > e || b > j) {
+        node empty;
+        empty.cnt[0] = empty.cnt[1] = empty.cnt[2] = 0;
+        return empty;
+    }
 
-    if(low >= l and high <= r) return seg[index];
+    if (i <= b && e <= j) return t[n];
 
-    int mid = (low + high) >> 1;
-    ll left = query(2 * index + 1, low, mid, l, r, lazy, lazy2, sega, segb, seg);
-    ll right = query(2 * index + 2, mid + 1, high, l, r, lazy, lazy2, sega, segb, seg);
+    int mid = (b + e) >> 1;
 
-    return modadd(left, right);
-}
+    return merge(query(lc, b, mid, i, j),
+                 query(rc, mid + 1, e, i, j));
+  }
+} t;
 
+void solve(int k) {
+    cout<<"Case "<<k<<":\n";
     int n, q;
-    cin >> n >> q;
+    cin>>n>>q;
 
-    vector<ll> a(n), b(n);
-    for(int i = 0; i < n; i++) cin >> a[i];
-    for(int i = 0; i < n; i++) cin >> b[i];
-
-    vector<ll> sega(4 * n), segb(4 * n), seg(4 * n), lazy(4 * n), lazy2(4 * n);
-    build(0, 0, n - 1, a, sega, b, segb, seg);
+    t.build(1, 0, n - 1);
 
     while(q--) {
-        int type;
-        cin >> type;
+        int x; cin>>x;
 
-        if(type == 1) {
-            ll l, r, value;
-            cin >> l >> r >> value;
-            update(0, 0, n - 1, l - 1, r - 1, value, lazy, lazy2, sega, segb, seg);
-        }
-        else if(type == 2) {
-            ll l, r, value;
-            cin >> l >> r >> value;
-            update2(0, 0, n - 1, l - 1, r - 1, value, lazy, lazy2, sega, segb, seg);
+        if(x == 0) {
+            int l, r; cin>>l>>r;
+            t.upd(1, 0, n - 1, l, r, 1);
         }
         else {
-            ll l, r;
-            cin >> l >> r;
-            cout << query(0, 0, n - 1, l - 1, r - 1, lazy, lazy2, sega, segb, seg) << '\n';
+            int l, r; cin>>l>>r;
+            node ans = t.query(1, 0, n - 1, l, r);
+            cout<<ans.cnt[0]<<endl;
         }
     }
+}
 
+int32_t main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int tc = 1, k = 1;
+    cin >> tc;
+    while (tc--) {
+        solve(k);
+        k++;
+    }
+
+    return 0;
+}
