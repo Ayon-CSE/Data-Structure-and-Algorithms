@@ -16,13 +16,10 @@ const int mod = 1e9 + 7;
 const ll inf = (ll)1e18;
 #define int long long int
 
-const int N = 3e5 + 9;
-vector<int> v(N), b(N), q(N);
+const int N = 200000 + 9;
 
-int a[N];
 struct ST {
   int t[4 * N];
-  static const int inf = 1e9;
   ST() {
     memset(t, 0, sizeof t);
   }
@@ -39,8 +36,8 @@ struct ST {
   void upd(int n, int b, int e, int i, int x) {
     if (b > i || e < i) return;
     if (b == e && b == i) {
-          t[n] += x; // update
-          return;
+      t[n] += x; // update
+      return;
     }
     int mid = (b + e) >> 1, l = n << 1, r = l | 1;
     upd(l, b, mid, i, x);
@@ -55,58 +52,44 @@ struct ST {
   }
 }t;
 
-void solve(int cs) {
-    cout<<"Case "<<cs<<":\n";
-    int n, m;
-    cin>>n>>m;
-
+void solve() {
+    int n; cin>>n;
+    vector<int> v(n + 9), c;
     set<int> s;
-    for(int i=0; i<n; i++) {
-        cin>>v[i]>>b[i];
-        s.insert(v[i]);
-        s.insert(b[i]);
-    }
+    for(int i=1; i<=n; i++) cin>>v[i], s.insert(v[i]);
 
-    for(int i=0; i<m; i++) {
-        cin>>q[i];
-        s.insert(q[i]);
-    }
-
+    for(auto i : s) c.push_back(i);
     map<int, int> mp;
-    int id = 1;
-    for(auto i : s) {
-        mp[i] = id;  /// value upto 1e12
-        id++;
+    for(int i=0; i<(int)c.size(); i++) {
+        mp[c[i]] = i + 1;
     }
 
-    for(int i=0; i<n; i++) {
+    /// segment tree + coordinate compression
+    /// segment tree index
+    /// 2 3 6 8 10 (like value upto 1e12) setake compress 1e6 at most
+    /// 1 2 3 4 5
+    for(int i=1; i<=n; i++) {
         v[i] = mp[v[i]];
-        b[i] = mp[b[i]];
-    }
-    for(int i=0; i<m; i++) {
-        q[i] = mp[q[i]];
     }
 
-    t.build(1, 1, id);
-    for(int i=0; i<n; i++) {
-        t.upd(1, 1, id, v[i], 1);
-        t.upd(1, 1, id, b[i] + 1, -1);
+    t.build(1, 1, n);
+    int ans = 0;
+    for(int i=n; i>=1; i--) {
+        ans += t.query(1, 1, n, 1, v[i] - 1);
+        t.upd(1, 1, n, v[i], 1);
     }
 
-    for(int i=0; i<m; i++) {
-        cout<<t.query(1, 1, id, 0, q[i])<<endl;
-    }
+    cout<<ans<<endl;
 }
 
 int32_t main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
 
-    int t = 1, k = 1;
+    int t = 1;
     cin >> t;
     while (t--) {
-        solve(k);
-        k++;
+        solve();
     }
 
     return 0;
